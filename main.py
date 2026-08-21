@@ -1,5 +1,13 @@
+import subprocess
 import sys
-import static_ffmpeg
+
+# Se o static_ffmpeg não estiver instalado, ele instala sozinho agora mesmo
+try:
+    import static_ffmpeg
+except ModuleNotFoundError:
+    print("[SETUP] Configurando suporte ao FFmpeg automaticamente...")
+    subprocess.check_call([sys.executable, "-m", "pip", "install", "static-ffmpeg"])
+    import static_ffmpeg
 
 # Baixa e adiciona o FFmpeg e FFprobe ao sistema automaticamente
 static_ffmpeg.add_paths()
