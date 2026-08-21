@@ -1,58 +1,38 @@
 # ============================================================
-# VIDEO DOWNLOADER - INICIALIZADOR AUTOMÁTICO (PYTHON PURO)
+# VIDEO DOWNLOADER - INICIALIZADOR AUTOMÁTICO COM WINGET
 # ============================================================
 Clear-Host
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "   Iniciando Video Downloader...          " -ForegroundColor Yellow
 Write-Host "==========================================" -ForegroundColor Cyan
 
-# 1. Função que acha o executável REAL do Python sem passar pela Microsoft Store
-function Obter-CaminhoPython {
-    $caminhos = @(
-        "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
-        "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe",
-        "$env:LOCALAPPDATA\Programs\Python\Python310\python.exe",
-        "$env:LOCALAPPDATA\Programs\Python\Python*\python.exe",
-        "C:\Program Files\Python312\python.exe",
-        "C:\Program Files\Python311\python.exe",
-        "C:\Program Files\Python*\python.exe",
-        "C:\Python*\python.exe"
-    )
-
-    foreach ($c in $caminhos) {
-        $arquivo = Get-Item $c -ErrorAction SilentlyContinue | Select-Object -Last 1
-        if ($arquivo -and (Test-Path $arquivo.FullName)) {
-            return $arquivo.FullName
-        }
+# 1. Verifica se o Python REAL já está funcionando
+$temPython = $false
+try {
+    $teste = (& python --version) 2>&1
+    # Só considera instalado se responder com "Python 3.x.x"
+    if ($LASTEXITCODE -eq 0 -and $teste -match "Python 3\.") {
+        $temPython = $true
+        Write-Host "[+] Python detectado: $teste" -ForegroundColor Green
     }
-    return $null
+} catch {
+    $temPython = $false
 }
 
-$pyExe = Obter-CaminhoPython
-
-# 2. Se o Python não estiver instalado, baixa o oficial e instala direto
-if (-not $pyExe) {
-    Write-Host "[!] Python nao encontrado. Baixando instalador oficial do python.org..." -ForegroundColor Yellow
+# 2. Se NÃO tiver Python, instala pelo Winget exatamente com o seu comando
+if (-not $temPython) {
+    Write-Host "[!] Python nao encontrado. Instalando via Winget..." -ForegroundColor Yellow
     
-    $installerPath = "$env:TEMP\python_setup.exe"
-    $pythonUrl = "https://www.python.org/ftp/python/3.12.3/python-3.12.3-amd64.exe"
+    # O SEU COMANDO DO WINGET
+    winget install --id Python.Python.3 --silent --accept-source-agreements --accept-package-agreements
     
-    Invoke-WebRequest -Uri $pythonUrl -OutFile $installerPath -UseBasicParsing
+    # RECARREGA O PATH
+    $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
     
-    Write-Host "[+] Instalando Python em segundo plano (aguarde cerca de 30s)..." -ForegroundColor Cyan
-    Start-Process -FilePath $installerPath -ArgumentList "/quiet", "InstallAllUsers=0", "PrependPath=1", "Include_pip=1" -Wait
-    Remove-Item $installerPath -Force -ErrorAction SilentlyContinue
-    
-    # Busca novamente o caminho do Python recém-instalado
-    $pyExe = Obter-CaminhoPython
+    # Testa a versão novamente após instalar
+    Write-Host "[+] Verificando instalacao..." -ForegroundColor Cyan
+    python --version
 }
-
-if (-not $pyExe) {
-    Write-Host "[ERRO] Nao foi possivel iniciar o Python automaticamente." -ForegroundColor Red
-    return
-}
-
-Write-Host "[+] Python carregado: $pyExe" -ForegroundColor Green
 
 # 3. Prepara a pasta local
 $appDir = "$env:LOCALAPPDATA\video_downloader"
@@ -62,8 +42,8 @@ if (-not (Test-Path $appDir)) {
     New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 }
 
-# 4. Baixa o código .py do seu GitHub
-Write-Host "[+] Baixando arquivos do GitHub..." -ForegroundColor Cyan
+# 4. Baixa os arquivos do seu GitHub
+Write-Host "[+] Baixando arquivos do projeto..." -ForegroundColor Cyan
 $zipUrl = "https://github.com/digomartins1/video_downloader/archive/refs/heads/main.zip"
 Invoke-WebRequest -Uri $zipUrl -OutFile $zipFile -UseBasicParsing
 
@@ -75,13 +55,13 @@ Remove-Item $zipFile -Force
 $pastaProjeto = "$appDir\video_downloader-main"
 Set-Location -Path $pastaProjeto
 
-# 7. Instala as dependências necessárias do requirements.txt
+# 7. Instala as dependências do requirements.txt
 if (Test-Path "requirements.txt") {
     Write-Host "[+] Verificando pacotes (pip)..." -ForegroundColor Cyan
-    & "$pyExe" -m pip install -r requirements.txt --quiet --no-warn-script-location
+    python -m pip install -r requirements.txt --quiet --no-warn-script-location
 }
 
-# 8. Executa o main.py
-Write-Host "[+] Abrindo o programa..." -ForegroundColor Green
+# 8. Executa o programa
+Write-Host "[+] Abrindo Video Downloader..." -ForegroundColor Green
 Clear-Host
-& "$pyExe" "$pastaProjeto\main.py"
+python main.py
