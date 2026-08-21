@@ -1,4 +1,9 @@
 import sys
+import static_ffmpeg
+
+# Baixa e adiciona o FFmpeg e FFprobe ao sistema automaticamente
+static_ffmpeg.add_paths()
+
 from src.cli.interface import CLIInterface
 
 def main():
