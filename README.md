@@ -10,7 +10,7 @@
 
 <p align="center">
   <b>Um baixador e extrator multimídia modular, de alta performance e desacoplado feito em Python.</b><br>
-  Suporta download de vídeos em alta resolução (1080p, 2K, 4K), extração de áudio para MP3, gravação de transmissões ao vivo (HLS/DASH) e sistema de inicialização autônoma (Bootstrapper).
+  Suporta download de vídeos em alta resolução (1080p, 2K, 4K), extração de áudio para MP3, gravação de transmissões ao vivo (HLS/DASH) e sistema de instalação 100% automático para leigos.
 </p>
 
 ---
@@ -23,8 +23,9 @@
 - [⚙️ Pré-requisitos e Dependências](#prerequisitos)
   - [📦 Instalação do FFmpeg](#instalacao-ffmpeg)
 - [🚀 Como Instalar e Executar](#instalacao)
-  - [Método 1: Inicializador Automático (Bootstrapper)](#bootstrapper)
-  - [Método 2: Instalação Manual (Ambiente de Desenvolvimento)](#instalacao-manual)
+  - [🪟 Método 1: Instalação Automática no Windows (1 Clique - Recomendado para Leigos)](#windows-powershell)
+  - [🐧🍏 Método 2: Inicializador Multiplataforma (Linux/macOS)](#bootstrapper)
+  - [💻 Método 3: Instalação Manual (Ambiente de Desenvolvimento)](#instalacao-manual)
 - [📖 Guia de Uso Passo a Passo](#guia-de-uso)
 - [📡 Matriz de Compatibilidade e Streaming](#compatibilidade)
 - [🧩 Guia de Extensão para Desenvolvedores](#extensao)
@@ -45,7 +46,7 @@
 - 🎵 **Conversor MP3 Integrado:** Extrai apenas a faixa sonora na melhor qualidade e a codifica em `.mp3` (192 kbps) com pós-processamento FFmpeg.
 - 📊 **Interface de Terminal com `Rich`:** Exibição de metadados do vídeo (título, autor, duração), spinners animados e barra de download com velocidade (MB/s), bytes transferidos e tempo restante (ETA).
 - 🧱 **Arquitetura Desacoplada (Clean Architecture / SRP):** Serviços isolados da interface gráfica/CLI para que o núcleo de download possa ser reaproveitado em APIs Web (FastAPI) ou interfaces Desktop (CustomTkinter/PyQt).
-- ⚡ **Auto-Bootstrapper (`launcher.py`):** Arquivo único que baixa o código-fonte atualizado do GitHub, cria a árvore de pastas e instala os pacotes `pip` sem etapas manuais, autoexcluindo-se após a preparação.
+- ⚡ **Instalação Automática para Leigos:** Com apenas 1 linha de comando no terminal do Windows, o sistema instala o Python (se faltar), baixa o FFmpeg, cria um ambiente isolado e abre o programa sozinho.
 
 ---
 
@@ -89,11 +90,13 @@ Deseja baixar outro vídeo? (s/n):
 ```text
 video_downloader/
 │
-├── launcher.py                 # 🚀 Instalador autônomo (baixa o projeto, dependências e se autoexclui)
+├── install.ps1                 # 🪟 Instalador 100% automático para Windows (PowerShell)
+├── launcher.py                 # 🚀 Instalador autônomo multiplataforma (Linux/macOS)
 ├── main.py                     # 🚪 Ponto de entrada padrão da aplicação (com auto-setup de FFmpeg)
 ├── requirements.txt            # 📦 Lista de dependências Python (yt-dlp, rich, static-ffmpeg)
 ├── README.md                   # 📄 Documentação técnica do projeto
 ├── .gitignore                  # 🙈 Arquivos ignorados pelo controle de versão
+├── LICENSE                     # ⚖️ Licença oficial MIT
 │
 ├── downloads/                  # 💾 Diretório onde os arquivos de mídia são salvos
 │
@@ -120,96 +123,108 @@ video_downloader/
 <a id="prerequisitos"></a>
 ## ⚙️ Pré-requisitos e Dependências
 
-- **Python 3.10 ou superior:** [Download do Python](https://www.python.org/downloads/) *(Marque a opção "Add Python to PATH" na instalação)*.
-- O projeto já conta com a biblioteca **`static-ffmpeg`**, que faz o download automático dos binários do FFmpeg. Caso queira instalá-lo de forma global no seu sistema operacional, use os comandos abaixo:
+- **Python 3.10 ou superior:** [Download do Python](https://www.python.org/downloads/) *(Marque a opção "Add Python to PATH" caso instale manualmente)*.
+- O projeto já possui a biblioteca **`static-ffmpeg`** embutida, que baixa e configura os binários do FFmpeg de forma totalmente automática.
 
 <a id="instalacao-ffmpeg"></a>
-### 📦 Instalação do FFmpeg
+### 📦 Instalação do FFmpeg (Opcional)
 
-#### No Windows:
-Abra o **PowerShell como Administrador** e execute:
-```powershell
-winget install Gyan.FFmpeg
-```
+Se preferir instalar o FFmpeg diretamente no seu sistema operacional:
 
-#### No Linux (Ubuntu/Debian):
-```bash
-sudo apt update && sudo apt install ffmpeg -y
-```
-
-#### No macOS:
-```bash
-brew install ffmpeg
-```
+- **Windows:** `winget install Gyan.FFmpeg`
+- **Linux (Ubuntu/Debian):** `sudo apt update && sudo apt install ffmpeg -y`
+- **macOS:** `brew install ffmpeg`
 
 ---
 
 <a id="instalacao"></a>
 ## 🚀 Como Instalar e Executar
 
+<a id="windows-powershell"></a>
+### 🪟 Método 1: Instalação Automática no Windows (1 Clique - Recomendado para Leigos)
+
+Não é necessário saber programar nem instalar o Python previamente. O script faz **tudo sozinho**:
+
+#### 📌 Passo a Passo Detalhado:
+
+1. **Abra o PowerShell no seu computador:**
+   - No teclado, pressione a tecla **Windows** (ou clique no menu Iniciar).
+   - Digite **`PowerShell`**.
+   - Clique em **Windows PowerShell** para abrir a janela azul/preta.
+
+2. **Copie e cole o comando abaixo:**
+   ```powershell
+   irm https://raw.githubusercontent.com/digomartins1/video_downloader/main/install.ps1 | iex
+   ```
+   > *(Dica: No PowerShell, basta clicar com o **botão direito do mouse** dentro da janela para colar o texto).*
+
+3. **Pressione a tecla Enter:**
+   - O instalador verificará se você tem Python (se não tiver, ele instala o Python 3.12 sozinho).
+   - Ele cria um ambiente virtual isolado em uma pasta segura.
+   - Baixa o projeto, configura o suporte a conversão de MP3 e abre o baixador imediatamente na sua tela.
+
+---
+
 <a id="bootstrapper"></a>
-### Método 1: Inicializador Automático (Bootstrapper)
-*Indicado para quem não quer clonar o repositório manualmente.*
+### 🐧🍏 Método 2: Inicializador Multiplataforma (Linux / macOS)
 
-Execute o comando correspondente no seu terminal:
-- **Windows (PowerShell):**
-```powershell
-Invoke-WebRequest -Uri "https://raw.githubusercontent.com/digomartins1/video_downloader/main/launcher.py" -OutFile "launcher.py"; python launcher.py
-```
-- **Linux / macOS:**
-```bash
-curl -sSL "https://raw.githubusercontent.com/digomartins1/video_downloader/main/launcher.py" -o launcher.py && python launcher.py
-```
+Se você já possui Python instalado e está no Linux ou Mac:
 
-O `launcher.py` fará todo o download dos módulos, instalará as dependências, se autoexcluirá e iniciará a aplicação.
+1. Baixe o arquivo [`launcher.py`](launcher.py) ou execute no terminal:
+   ```bash
+   curl -sSL "https://raw.githubusercontent.com/digomartins1/video_downloader/main/launcher.py" -o launcher.py && python launcher.py
+   ```
+2. O script fará o download dos arquivos, instalará os pacotes e iniciará a aplicação.
 
 ---
 
 <a id="instalacao-manual"></a>
-### Método 2: Instalação Manual (Ambiente de Desenvolvimento)
+### 💻 Método 3: Instalação Manual (Ambiente de Desenvolvimento)
+
+Para quem deseja clonar o código e programar:
 
 1. **Clone o repositório:**
-```bash
-git clone https://github.com/digomartins1/video_downloader.git
-cd video_downloader
-```
+   ```bash
+   git clone https://github.com/digomartins1/video_downloader.git
+   cd video_downloader
+   ```
 
 2. **Crie e ative um ambiente virtual:**
-```bash
-# Windows
-python -m venv .venv
-.\.venv\Scripts\activate
+   ```bash
+   # Windows
+   python -m venv .venv
+   .\.venv\Scripts\activate
 
-# Linux / macOS
-python3 -m venv .venv
-source .venv/bin/activate
-```
+   # Linux / macOS
+   python3 -m venv .venv
+   source .venv/bin/activate
+   ```
 
 3. **Instale as dependências:**
-```bash
-pip install -r requirements.txt
-```
+   ```bash
+   pip install -r requirements.txt
+   ```
 
-4. **Execute a aplicação:**
-```bash
-python main.py
-```
+4. **Execute o projeto:**
+   ```bash
+   python main.py
+   ```
 
 ---
 
 <a id="guia-de-uso"></a>
 ## 📖 Guia de Uso Passo a Passo
 
-1. Execute o arquivo principal (`python main.py`).
+1. Inicie o programa pelo terminal.
 2. Cole a URL do vídeo ou transmissão que deseja baixar.
-3. Aguarde a validação dos metadados (Título, Autor e Duração).
-4. Selecione a opção no menu:
-   - **`1`**: Melhor qualidade geral de vídeo + melhor áudio combinados.
+3. O sistema exibirá o **Título**, **Canal/Autor** e **Duração**.
+4. Escolha a opção desejada:
+   - **`1`**: Melhor qualidade de vídeo e áudio combinados.
    - **`2`**: Vídeo em resolução até 1080p (Full HD).
    - **`3`**: Vídeo em resolução até 720p (HD).
    - **`4`**: Extração de áudio convertida para `.mp3`.
-5. Ao término, o arquivo estará pronto dentro da pasta `downloads/`.
-6. O programa perguntará se você deseja fazer outro download (`s/n`). Ao digitar `s`, a tela é limpa e o processo reinicia.
+5. Acompanhe a barra com velocidade em tempo real. O arquivo será salvo na pasta `downloads/`.
+6. Ao finalizar, o programa perguntará: `Deseja baixar outro vídeo? (s/n)`. Digitando `s`, a tela é limpa para um novo download.
 
 ---
 
@@ -220,7 +235,7 @@ python main.py
 | :--- | :---: | :--- |
 | **YouTube (Vídeos e Shorts)** | ✅ Sim | Suporte total até 4K/8K e extração de áudio. |
 | **TikTok e Instagram Reels** | ✅ Sim | Download direto sem marca d'água quando disponível. |
-| **Twitter / X & Reddit** | ✅ Sim | Extração de mídias e vídeos de posts. |
+| **Twitter / X & Reddit** | ✅ Sim | Extração de mídias e vídeos anexados a posts. |
 | **Twitch e Kick (Lives & VODs)** | ✅ Sim | Grava transmissões ao vivo ou gravações passadas. |
 | **Streams HLS (`.m3u8`) e DASH (`.mpd`)** | ✅ Sim | Baixa e une blocos de transmissão via FFmpeg. |
 | **Serviços com DRM (Netflix, Prime, Disney+)** | ❌ Não | Não suportado devido a criptografia de direitos autorais. |
@@ -230,7 +245,7 @@ python main.py
 <a id="extensao"></a>
 ## 🧩 Guia de Extensão para Desenvolvedores
 
-Como o `DownloadService` é totalmente desacoplado da interface de terminal, você pode importá-lo em outros projetos facilmente:
+O módulo `DownloadService` é totalmente desacoplado da interface visual e pode ser integrado em outros sistemas:
 
 ### Exemplo em Interface Gráfica (Desktop GUI com CustomTkinter ou PyQt):
 ```python
@@ -256,7 +271,7 @@ app = FastAPI()
 def api_download(url: str, background_tasks: BackgroundTasks):
     downloader = DownloadService()
     background_tasks.add_task(downloader.download, url)
-    return {"status": "Download adicionado à fila"}
+    return {"status": "Download iniciado em segundo plano"}
 ```
 
 ---
@@ -284,18 +299,18 @@ DEFAULT_YT_DLP_OPTS = {
 ## ❓ Resolução de Problemas (FAQ)
 
 <details>
-<summary><b>1. Erro: <code>ImportError: cannot import name 'DownloadService'</code></b></summary>
-Certifique-se de que o arquivo <code>src/services/download_service.py</code> contém o código salvo e a classe declarada como <code>class DownloadService:</code>.
+<summary><b>1. Onde ficam salvos os vídeos que eu baixo?</b></summary>
+Todos os vídeos baixados são salvos automaticamente dentro da pasta <code>downloads/</code> localizada dentro do diretório do projeto.
 </details>
 
 <details>
 <summary><b>2. Erro de FFmpeg ou conversão para MP3 travando</b></summary>
-O projeto usa a biblioteca <code>static-ffmpeg</code> para auto-configuração. Caso ocorra erro, instale o FFmpeg no sistema operacional via <code>winget install Gyan.FFmpeg</code> e reinicie o terminal.
+O projeto utiliza a biblioteca <code>static-ffmpeg</code> para configuração automática. Caso o seu sistema possua restrições, instale o FFmpeg via <code>winget install Gyan.FFmpeg</code> no PowerShell e reinicie o terminal.
 </details>
 
 <details>
-<summary><b>3. Erro: <code>HTTP Error 403: Forbidden</code></b></summary>
-Algumas plataformas atualizam seus bloqueios periodicamente. Para resolver, atualize a engine executando:
+<summary><b>3. Erro: <code>HTTP Error 403: Forbidden</code> ou bloqueio temporário</b></summary>
+Alguns sites atualizam suas proteções periodicamente. Para atualizar a engine de download, execute:
 ```bash
 pip install --upgrade yt-dlp
 ```
