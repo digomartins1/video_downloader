@@ -1,45 +1,46 @@
 # ============================================================
-# VIDEO DOWNLOADER - INICIALIZADOR AUTOMÁTICO
+# VIDEO DOWNLOADER - 100% AUTOMÁTICO COM VENV ISOLADO
 # ============================================================
 Clear-Host
 Write-Host "==========================================" -ForegroundColor Cyan
 Write-Host "   Iniciando Video Downloader...          " -ForegroundColor Yellow
 Write-Host "==========================================" -ForegroundColor Cyan
 
-# 1. Verifica se já existe um Python funcional no computador
-$pythonPronto = $false
-try {
-    $teste = & py --version 2>&1
-    if ($LASTEXITCODE -eq 0 -and $teste -match "Python 3\.") {
-        $pythonPronto = $true
-        Write-Host "[+] Python detectado: $teste" -ForegroundColor Green
+# 1. Localiza o Python base do sistema
+function Obter-PythonBase {
+    $locais = @(
+        "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python*\python.exe",
+        "C:\Program Files\Python312\python.exe",
+        "C:\Program Files\Python313\python.exe",
+        "C:\Program Files\Python*\python.exe",
+        "C:\Python*\python.exe"
+    )
+    foreach ($local in $locais) {
+        $exe = Get-Item $local -ErrorAction SilentlyContinue | Select-Object -Last 1
+        if ($exe -and (Test-Path $exe.FullName)) {
+            return $exe.FullName
+        }
     }
-} catch {
-    $pythonPronto = $false
+
+    $py = Get-Command "py" -ErrorAction SilentlyContinue
+    if ($py) { return "py" }
+
+    return $null
 }
 
-# 2. Se NÃO tiver Python, busca e instala a versão MAIS RECENTE via Winget
-if (-not $pythonPronto) {
-    Write-Host "[!] Python nao encontrado. Buscando versao mais recente no Winget..." -ForegroundColor Yellow
+$pyBase = Obter-PythonBase
 
-    # Procura todas as versões do Python 3 disponíveis no Winget e pega a mais nova
-    $versoes = (winget search --id "Python.Python.3" --source winget | Select-String -Pattern 'Python\.Python\.3\.\d+' -AllMatches).Matches.Value | Select-Object -Unique
-    
-    if ($versoes) {
-        # Ordena numericamente e pega a última (mais recente)
-        $idMaisRecente = $versoes | Sort-Object { [version]($_ -replace 'Python\.Python\.', '') } | Select-Object -Last 1
-    } else {
-        $idMaisRecente = "Python.Python.3.12"  # Fallback de segurança
-    }
-
-    Write-Host "[+] Instalando [$idMaisRecente] via Winget..." -ForegroundColor Cyan
-    winget install -e --id $idMaisRecente --scope user --accept-source-agreements --accept-package-agreements
-
-    # Atualiza o PATH da sessão atual para o terminal reconhecer o Python agora
+# Se não tiver Python, instala via Winget
+if (-not $pyBase) {
+    Write-Host "[+] Instalando Python automaticamente via Winget..." -ForegroundColor Cyan
+    winget install -e --id Python.Python.3.12 --scope user --silent --accept-source-agreements --accept-package-agreements
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path","Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path","User")
+    $pyBase = Obter-PythonBase
 }
 
-# 3. Prepara a pasta local
+# 2. Prepara a pasta local
 $appDir = "$env:LOCALAPPDATA\video_downloader"
 $zipFile = "$appDir\repo.zip"
 
@@ -47,25 +48,31 @@ if (-not (Test-Path $appDir)) {
     New-Item -ItemType Directory -Path $appDir -Force | Out-Null
 }
 
+# 3. Cria o Ambiente Virtual isolado (venv) se ainda não existir
+$venvDir = "$appDir\venv"
+$venvPython = "$venvDir\Scripts\python.exe"
+
+if (-not (Test-Path $venvPython)) {
+    Write-Host "[+] Configurando ambiente isolado do projeto..." -ForegroundColor Cyan
+    & $pyBase -m venv "$venvDir"
+}
+
 # 4. Baixa e descompacta os arquivos do GitHub
-Write-Host "[+] Baixando arquivos do projeto..." -ForegroundColor Cyan
+Write-Host "[+] Baixando projeto do GitHub..." -ForegroundColor Cyan
 $zipUrl = "https://github.com/digomartins1/video_downloader/archive/refs/heads/main.zip"
 Invoke-WebRequest -Uri $zipUrl -OutFile $zipFile -UseBasicParsing
 
 Expand-Archive -Path $zipFile -DestinationPath $appDir -Force
 Remove-Item $zipFile -Force
 
-# 5. Entra na pasta do projeto
 $pastaProjeto = "$appDir\video_downloader-main"
 Set-Location -Path $pastaProjeto
 
-# 6. Instala dependências do requirements.txt
-if (Test-Path "requirements.txt") {
-    Write-Host "[+] Verificando pacotes (pip)..." -ForegroundColor Cyan
-    py -m pip install -r requirements.txt --quiet --no-warn-script-location
-}
+# 5. Instala os pacotes DIRETAMENTE dentro do ambiente isolado
+Write-Host "[+] Instalando dependencias (rich e yt-dlp)..." -ForegroundColor Cyan
+& "$venvPython" -m pip install rich yt-dlp --no-warn-script-location
 
-# 7. Abre o programa
+# 6. Executa o programa usando o Python do ambiente isolado
 Write-Host "[+] Abrindo Video Downloader..." -ForegroundColor Green
 Clear-Host
-py main.py
+& "$venvPython" "$pastaProjeto\main.py"
