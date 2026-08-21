@@ -1,20 +1,39 @@
-import subprocess
+import os
 import sys
+import subprocess
 
-# Se o static_ffmpeg não estiver instalado, ele instala sozinho agora mesmo
+# 1. Instalação silenciosa do static-ffmpeg se necessário
 try:
     import static_ffmpeg
 except ModuleNotFoundError:
-    print("[SETUP] Configurando suporte ao FFmpeg automaticamente...")
-    subprocess.check_call([sys.executable, "-m", "pip", "install", "static-ffmpeg"])
+    subprocess.check_call(
+        [sys.executable, "-m", "pip", "install", "static-ffmpeg"],
+        stdout=subprocess.DEVNULL,
+        stderr=subprocess.DEVNULL
+    )
     import static_ffmpeg
 
-# Baixa e adiciona o FFmpeg e FFprobe ao sistema automaticamente
-static_ffmpeg.add_paths()
+# 2. Configura o FFmpeg em segundo plano (sem poluir o terminal)
+try:
+    with open(os.devnull, 'w') as fnull:
+        old_stdout = sys.stdout
+        old_stderr = sys.stderr
+        sys.stdout = fnull
+        sys.stderr = fnull
+        try:
+            static_ffmpeg.add_paths()
+        finally:
+            sys.stdout = old_stdout
+            sys.stderr = old_stderr
+except Exception:
+    static_ffmpeg.add_paths()
 
 from src.cli.interface import CLIInterface
 
 def main():
+    # 3. Limpa a tela do terminal antes de mostrar o programa
+    os.system('cls' if os.name == 'nt' else 'clear')
+    
     try:
         app = CLIInterface()
         app.run()
