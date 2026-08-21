@@ -1,11 +1,11 @@
 # 🎬 Video Downloader (Python Modular)
 
 <p align="center">
-  <kbd>🐍 Python 3.10+</kbd> • 
-  <kbd>⚙️ Engine: yt-dlp</kbd> • 
-  <kbd>🎨 UI: Rich CLI</kbd> • 
-  <kbd>⚡ Status: Ativo</kbd> • 
-  <kbd>📄 Licença: MIT</kbd>
+  <a href="#!"><img src="https://img.shields.io/badge/Python-3.10%2B-3776AB?style=for-the-badge&logo=python&logoColor=white" alt="Python Version"></a>
+  <a href="#!"><img src="https://img.shields.io/badge/Engine-yt--dlp-FF0000?style=for-the-badge&logo=youtube&logoColor=white" alt="yt-dlp"></a>
+  <a href="#!"><img src="https://img.shields.io/badge/UI-Rich_CLI-008000?style=for-the-badge" alt="Rich CLI"></a>
+  <a href="#!"><img src="https://img.shields.io/badge/Status-Ativo-success?style=for-the-badge" alt="Status"></a>
+  <a href="#!"><img src="https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge" alt="License"></a>
 </p>
 
 <p align="center">
