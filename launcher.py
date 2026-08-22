@@ -6,9 +6,6 @@ import subprocess
 import urllib.request
 from pathlib import Path
 
-# ==========================================
-# CONFIGURAÇÕES DO GITHUB
-# ==========================================
 GITHUB_USER = "digomartins1"
 GITHUB_REPO = "video_downloader"
 BRANCH = "main"
@@ -27,7 +24,6 @@ def print_status(msg: str):
 
 
 def obter_python_do_sistema() -> str:
-    """Encontra o executável real do Python instalado na máquina."""
     candidatos = [
         "python",
         "py",
@@ -48,7 +44,6 @@ def obter_python_do_sistema() -> str:
 
 
 def download_repo():
-    """Baixa os arquivos do GitHub."""
     print_status(f"Baixando arquivos mais recentes de {GITHUB_REPO}...")
     headers = {"User-Agent": "Mozilla/5.0"}
     req = urllib.request.Request(REPO_ZIP_URL, headers=headers)
@@ -63,7 +58,6 @@ def download_repo():
 
 
 def extract_repo():
-    """Extrai os módulos do ZIP."""
     print_status("Extraindo projeto...")
     try:
         with zipfile.ZipFile(TEMP_ZIP, "r") as zip_ref:
@@ -96,11 +90,10 @@ def extract_repo():
 
 
 def install_requirements(py_cmd: str):
-    """Instala as bibliotecas usando o Python real da máquina."""
     if not REQ_FILE.exists():
         return
 
-    print_status("Verificando e instalando pacotes necessários...")
+    print_status("Verificando dependências...")
     try:
         subprocess.check_call(
             [py_cmd, "-m", "pip", "install", "-r", str(REQ_FILE)],
@@ -109,17 +102,16 @@ def install_requirements(py_cmd: str):
         )
         print_status("Tudo configurado com sucesso!")
     except Exception as e:
-        print(f"\n[AVISO] Não foi possível atualizar os pacotes: {e}")
+        print(f"\n[AVISO] Erro ao atualizar dependências: {e}")
 
 
 def run_application(py_cmd: str):
-    """Abre o programa principal."""
     if not MAIN_FILE.exists():
         print(f"\n[ERRO] Arquivo principal não encontrado.")
         input("\nPressione Enter para sair...")
         sys.exit(1)
 
-    print_status("Abrindo o Video Downloader...")
+    print_status("Iniciando o Video Downloader...")
     try:
         subprocess.Popen([py_cmd, str(MAIN_FILE)])
     except Exception as e:
@@ -128,21 +120,13 @@ def run_application(py_cmd: str):
 
 
 def main():
-    print("=" * 45)
-    print("   INSTALADOR AUTOMÁTICO - VIDEO DOWNLOADER   ")
-    print("=" * 45)
-
     py_cmd = obter_python_do_sistema()
 
-    # 1. Se os arquivos não existem na pasta, baixa e extrai
     if not (APP_DIR / "src").exists() or not MAIN_FILE.exists():
         download_repo()
         extract_repo()
 
-    # 2. Instala os pacotes
     install_requirements(py_cmd)
-
-    # 3. Executa o Video Downloader
     run_application(py_cmd)
 
 
