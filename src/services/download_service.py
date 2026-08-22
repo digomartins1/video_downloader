@@ -7,10 +7,7 @@ class DownloadService:
         self.progress_hook = progress_hook
 
     def download(self, url: str, format_choice: str = "best", is_audio_only: bool = False) -> bool:
-        """
-        Executa o download do vídeo ou extração de áudio.
-        format_choice: 'best', '1080', '720', '480', etc.
-        """
+        """Executa o download do vídeo ou extração de áudio em MP3."""
         ydl_opts = {
             "outtmpl": str(DOWNLOAD_DIR / "%(title)s.%(ext)s"),
             "quiet": True,
