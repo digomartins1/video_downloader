@@ -2,9 +2,10 @@ import os
 import threading
 import customtkinter as ctk
 from tkinter import messagebox
-from src.config import DOWNLOAD_DIR
+from src.config import DOWNLOAD_DIR, CURRENT_VERSION
 from src.services.info_service import InfoService
 from src.services.download_service import DownloadService
+from src.services.update_service import UpdateService
 from src.utils.formatters import format_duration
 
 # Configurações do Tema Visual
@@ -15,31 +16,42 @@ class VideoDownloaderGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
 
-        # Configurações da Janela
-        self.title("Python Video Downloader")
-        self.geometry("650x580")
+        # Janela Principal
+        self.title(f"Python Video Downloader - v{CURRENT_VERSION}")
+        self.geometry("660x600")
         self.resizable(False, False)
 
         self.current_info = None
 
         self._build_ui()
 
+        # Inicia a checagem de atualizações silenciosa em segundo plano
+        threading.Thread(target=self._check_updates_background, daemon=True).start()
+
     def _build_ui(self):
-        # Título Principal
+        # Cabeçalho
         self.title_label = ctk.CTkLabel(
             self, 
             text="🎬 Video Downloader", 
             font=ctk.CTkFont(size=24, weight="bold")
         )
-        self.title_label.pack(pady=(20, 10))
+        self.title_label.pack(pady=(15, 5))
+
+        self.version_label = ctk.CTkLabel(
+            self, 
+            text=f"Versão {CURRENT_VERSION} • Suporte a 1000+ Plataformas e Streams", 
+            text_color="gray",
+            font=ctk.CTkFont(size=12)
+        )
+        self.version_label.pack(pady=(0, 10))
 
         # Campo de Entrada de URL
         self.url_frame = ctk.CTkFrame(self)
-        self.url_frame.pack(fill="x", padx=30, pady=10)
+        self.url_frame.pack(fill="x", padx=30, pady=5)
 
         self.url_entry = ctk.CTkEntry(
             self.url_frame, 
-            placeholder_text="Cole a URL do vídeo aqui (YouTube, TikTok, Twitch, etc.)...",
+            placeholder_text="Cole a URL do vídeo aqui (YouTube, TikTok, Instagram, etc.)...",
             height=40
         )
         self.url_entry.pack(side="left", fill="x", expand=True, padx=(10, 10), pady=10)
@@ -62,7 +74,7 @@ class VideoDownloaderGUI(ctk.CTk):
             text="Título: Nenhum vídeo carregado", 
             anchor="w", 
             font=ctk.CTkFont(size=14, weight="bold"),
-            wraplength=570
+            wraplength=580
         )
         self.lbl_video_title.pack(fill="x", padx=15, pady=(10, 2))
 
@@ -82,11 +94,11 @@ class VideoDownloaderGUI(ctk.CTk):
         )
         self.lbl_video_duration.pack(fill="x", padx=15, pady=(2, 10))
 
-        # Seletor de Qualidade / Formato
+        # Seletor de Formato
         self.options_frame = ctk.CTkFrame(self)
-        self.options_frame.pack(fill="x", padx=30, pady=10)
+        self.options_frame.pack(fill="x", padx=30, pady=5)
 
-        self.lbl_format = ctk.CTkLabel(self.options_frame, text="Formato:")
+        self.lbl_format = ctk.CTkLabel(self.options_frame, text="Qualidade / Formato:")
         self.lbl_format.pack(side="left", padx=(15, 10), pady=10)
 
         self.combo_format = ctk.CTkComboBox(
@@ -98,7 +110,7 @@ class VideoDownloaderGUI(ctk.CTk):
                 "Vídeo 480p",
                 "Apenas Áudio (MP3)"
             ],
-            width=220
+            width=230
         )
         self.combo_format.pack(side="left", padx=5, pady=10)
         self.combo_format.set("Melhor Qualidade (Vídeo)")
@@ -112,7 +124,7 @@ class VideoDownloaderGUI(ctk.CTk):
             state="disabled",
             command=self._on_download_clicked
         )
-        self.btn_download.pack(fill="x", padx=30, pady=15)
+        self.btn_download.pack(fill="x", padx=30, pady=10)
 
         # Barra de Progresso e Status
         self.progress_bar = ctk.CTkProgressBar(self)
@@ -122,7 +134,7 @@ class VideoDownloaderGUI(ctk.CTk):
         self.lbl_status = ctk.CTkLabel(self, text="Aguardando link...", text_color="gray")
         self.lbl_status.pack(pady=(2, 10))
 
-        # Botão para Abrir Pasta de Downloads
+        # Botão de Abrir Pasta de Downloads
         self.btn_open_folder = ctk.CTkButton(
             self, 
             text="📁 Abrir Pasta de Downloads", 
@@ -131,8 +143,37 @@ class VideoDownloaderGUI(ctk.CTk):
             hover_color="#333333",
             command=self._open_download_folder
         )
-        self.btn_open_folder.pack(pady=(0, 15))
+        self.btn_open_folder.pack(pady=(0, 10))
 
+    # --- Lógica de Atualização Automática ---
+    def _check_updates_background(self):
+        update_info = UpdateService.check_for_update()
+        if update_info:
+            new_version, download_url, notes = update_info
+            self.after(0, lambda: self._prompt_update(new_version, download_url, notes))
+
+    def _prompt_update(self, new_version, download_url, notes):
+        msg = (
+            f"Uma nova versão ({new_version}) está disponível!\n\n"
+            f"Versão atual: {CURRENT_VERSION}\n"
+            f"Novidades:\n{notes}\n\n"
+            f"Deseja atualizar o programa agora?"
+        )
+        resposta = messagebox.askyesno("🎉 Atualização Disponível", msg)
+        if resposta:
+            self.lbl_status.configure(text=f"⬇️ Baixando atualização {new_version}...", text_color="#1f6aa5")
+            self.progress_bar.set(0)
+            threading.Thread(target=self._download_update_thread, args=(download_url,), daemon=True).start()
+
+    def _download_update_thread(self, download_url):
+        def prog_callback(percent):
+            self.after(0, lambda: self.progress_bar.set(percent))
+
+        sucesso = UpdateService.apply_update(download_url, progress_callback=prog_callback)
+        if not sucesso:
+            self.after(0, lambda: messagebox.showerror("Erro", "Não foi possível aplicar a atualização automática."))
+
+    # --- Lógica de Busca e Download de Vídeo ---
     def _on_search_clicked(self):
         url = self.url_entry.get().strip()
         if not url:
@@ -141,21 +182,17 @@ class VideoDownloaderGUI(ctk.CTk):
 
         self.btn_search.configure(state="disabled")
         self.lbl_status.configure(text="🔍 Obtendo informações do vídeo...", text_color="#1f6aa5")
-
-        # Executa a busca em segundo plano (thread) para não travar a janela
         threading.Thread(target=self._search_thread, args=(url,), daemon=True).start()
 
     def _search_thread(self, url):
         info = InfoService.get_info(url)
-        
         self.after(0, lambda: self._update_video_info(info))
 
     def _update_video_info(self, info):
         self.btn_search.configure(state="normal")
-
         if not info:
             self.lbl_status.configure(text="❌ Não foi possível carregar o vídeo.", text_color="red")
-            messagebox.showerror("Erro", "Falha ao acessar o link. Verifique a URL.")
+            messagebox.showerror("Erro", "Falha ao acessar a URL. Verifique o link e tente novamente.")
             return
 
         self.current_info = info
@@ -170,12 +207,10 @@ class VideoDownloaderGUI(ctk.CTk):
         if d["status"] == "downloading":
             total = d.get("total_bytes") or d.get("total_bytes_estimate") or 0
             downloaded = d.get("downloaded_bytes", 0)
-            
             if total > 0:
                 percent = downloaded / total
                 speed = d.get("speed", 0) or 0
                 speed_mb = speed / (1024 * 1024)
-                
                 self.after(0, lambda: self._update_progress(percent, f"Baixando: {percent*100:.1f}% ({speed_mb:.2f} MB/s)"))
         elif d["status"] == "finished":
             self.after(0, lambda: self._update_progress(1.0, "Processando e finalizando arquivo..."))
@@ -200,18 +235,15 @@ class VideoDownloaderGUI(ctk.CTk):
         elif "480p" in selected_format:
             res = "480"
 
-        # Trava os botões durante o download
         self.btn_download.configure(state="disabled")
         self.btn_search.configure(state="disabled")
         self.progress_bar.set(0)
 
-        # Inicia o download em uma thread separada
         threading.Thread(target=self._download_thread, args=(url, res, is_audio), daemon=True).start()
 
     def _download_thread(self, url, res, is_audio):
         downloader = DownloadService(progress_hook=self._progress_hook)
         success = downloader.download(url, format_choice=res, is_audio_only=is_audio)
-
         self.after(0, lambda: self._download_finished(success))
 
     def _download_finished(self, success):
@@ -226,7 +258,7 @@ class VideoDownloaderGUI(ctk.CTk):
             messagebox.showerror("Erro", "Ocorreu um erro durante o download.")
 
     def _open_download_folder(self):
-        """Abre a pasta de downloads no explorador de arquivos do sistema operacional."""
+        """Abre a pasta de downloads no Windows Explorer ou gerenciador padrão."""
         if os.name == 'nt':
             os.startfile(DOWNLOAD_DIR)
         else:
