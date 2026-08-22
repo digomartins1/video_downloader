@@ -3,7 +3,7 @@ from pathlib import Path
 # ==========================================
 # VERSÃO E REPOSITÓRIO DO PROGRAMA
 # ==========================================
-CURRENT_VERSION = "1.0.0"
+CURRENT_VERSION = "1.1.0"
 GITHUB_REPO = "digomartins1/video_downloader"
 
 # Diretórios
