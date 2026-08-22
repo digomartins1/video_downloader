@@ -1,17 +1,18 @@
 import os
 import sys
-import subprocess
 
-# 1. Instalação automática e silenciosa de pacotes ausentes
-for package in ["static-ffmpeg", "customtkinter", "yt-dlp", "rich"]:
-    try:
-        __import__(package.replace("-", "_"))
-    except ModuleNotFoundError:
-        subprocess.check_call(
-            [sys.executable, "-m", "pip", "install", package],
-            stdout=subprocess.DEVNULL,
-            stderr=subprocess.DEVNULL
-        )
+# 1. Se estiver rodando como código aberto (.py), instala os pacotes se faltarem
+if not getattr(sys, 'frozen', False):
+    import subprocess
+    for package in ["static-ffmpeg", "customtkinter", "yt-dlp", "rich"]:
+        try:
+            __import__(package.replace("-", "_"))
+        except ModuleNotFoundError:
+            subprocess.check_call(
+                [sys.executable, "-m", "pip", "install", package],
+                stdout=subprocess.DEVNULL,
+                stderr=subprocess.DEVNULL
+            )
 
 # 2. Configura o FFmpeg em segundo plano
 try:
@@ -26,7 +27,7 @@ try:
 except Exception:
     pass
 
-# 3. Inicializa a Interface Gráfica
+# 3. Importa e inicializa a Interface Gráfica
 from src.gui.interface import VideoDownloaderGUI
 
 def main():
