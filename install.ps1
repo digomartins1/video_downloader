@@ -10,31 +10,30 @@ Write-Host "==========================================" -ForegroundColor Cyan
 # 1. LOCALIZA OU INSTALA O PYTHON BASE NO WINDOWS
 # ------------------------------------------------------------
 function Obter-PythonBase {
-    # 1.1 Verifica se o comando 'python' ou 'py' já responde no terminal
-    $cmdPy = Get-Command "python" -ErrorAction SilentlyContinue
-    if ($cmdPy) { return $cmdPy.Source }
-
-    $cmdLauncher = Get-Command "py" -ErrorAction SilentlyContinue
-    if ($cmdLauncher) { return "py" }
-
-    # 1.2 Procura nos diretórios padrão de instalação do Windows
-    $locais = @(
-        "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
+    $candidatos = @(
+        "python",
+        "py",
+        "python3",
+        "$env:LOCALAPPDATA\Programs\Python\Python314\python.exe",
         "$env:LOCALAPPDATA\Programs\Python\Python313\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python312\python.exe",
         "$env:LOCALAPPDATA\Programs\Python\Python311\python.exe",
-        "$env:LOCALAPPDATA\Programs\Python\Python*\python.exe",
-        "C:\Program Files\Python312\python.exe",
+        "$env:LOCALAPPDATA\Programs\Python\Python310\python.exe",
+        "C:\Program Files\Python314\python.exe",
         "C:\Program Files\Python313\python.exe",
-        "C:\Program Files\Python*\python.exe",
-        "C:\Python*\python.exe"
+        "C:\Program Files\Python312\python.exe",
+        "C:\Program Files\Python311\python.exe",
+        "C:\Program Files\Python310\python.exe"
     )
-    foreach ($local in $locais) {
-        $exe = Get-Item $local -ErrorAction SilentlyContinue | Select-Object -Last 1
-        if ($exe -and (Test-Path $exe.FullName)) {
-            return $exe.FullName
-        }
-    }
 
+    foreach ($cand in $candidatos) {
+        try {
+            $teste = & $cand --version 2>$null
+            if ($LASTEXITCODE -eq 0 -or $teste) {
+                return $cand
+            }
+        } catch {}
+    }
     return $null
 }
 
@@ -61,18 +60,25 @@ if (-not (Test-Path $appDir)) {
 }
 
 # ------------------------------------------------------------
-# 3. CRIA O AMBIENTE VIRTUAL ISOLADO (.VENV)
+# 3. CRIA O AMBIENTE VIRTUAL ISOLADO (.VENV) COM RECUPERAÇÃO
 # ------------------------------------------------------------
 $venvDir = "$appDir\venv"
 $venvPython = "$venvDir\Scripts\python.exe"
 
+# Se o executável não existir, limpa a pasta corrompida e tenta recriar
 if (-not (Test-Path $venvPython)) {
-    Write-Host "[+] Criando ambiente virtual isolado (.venv)..." -ForegroundColor Cyan
-    & $pyBase -m venv "$venvDir"
+    if (Test-Path $venvDir) {
+        Remove-Item $venvDir -Recurse -Force -ErrorAction SilentlyContinue
+    }
+    Write-Host "[+] Configurando ambiente virtual isolado..." -ForegroundColor Cyan
+    & $pyBase -m venv "$venvDir" 2>$null
 }
 
+# Define o interpretador final (usa o venv se existir, ou o Python base como fallback)
+$execPython = if (Test-Path $venvPython) { $venvPython } else { $pyBase }
+
 # ------------------------------------------------------------
-# 4. BAIXA E EXTRAI O CÓDIGO-FONTE ATUALIZADO DO GITHUB
+# 4. BAIXA E EXTRAI O CÓDIGO-FONTE DO GITHUB
 # ------------------------------------------------------------
 Write-Host "[+] Baixando projeto do GitHub..." -ForegroundColor Cyan
 $zipUrl = "https://github.com/digomartins1/video_downloader/archive/refs/heads/main.zip"
@@ -89,8 +95,8 @@ Set-Location -Path $pastaProjeto
 # ------------------------------------------------------------
 $reqFile = "$pastaProjeto\requirements.txt"
 if (Test-Path $reqFile) {
-    Write-Host "[+] Instalando dependências (yt-dlp, rich e static-ffmpeg)..." -ForegroundColor Cyan
-    & "$venvPython" -m pip install -r "$reqFile" --no-warn-script-location --quiet
+    Write-Host "[+] Verificando dependências..." -ForegroundColor Cyan
+    & $execPython -m pip install -r "$reqFile" --no-warn-script-location --quiet
 }
 
 # ------------------------------------------------------------
@@ -98,4 +104,4 @@ if (Test-Path $reqFile) {
 # ------------------------------------------------------------
 Write-Host "[+] Abrindo Video Downloader..." -ForegroundColor Green
 Clear-Host
-& "$venvPython" "$pastaProjeto\main.py"
+& $execPython "$pastaProjeto\main.py"
