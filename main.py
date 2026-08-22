@@ -2,44 +2,42 @@ import os
 import sys
 import subprocess
 
-# 1. Instalação silenciosa do static-ffmpeg se necessário
-try:
-    import static_ffmpeg
-except ModuleNotFoundError:
-    subprocess.check_call(
-        [sys.executable, "-m", "pip", "install", "static-ffmpeg"],
-        stdout=subprocess.DEVNULL,
-        stderr=subprocess.DEVNULL
-    )
-    import static_ffmpeg
+# 1. Garante que o static-ffmpeg e o customtkinter estejam instalados automaticamente
+for package in ["static-ffmpeg", "customtkinter", "yt-dlp", "rich"]:
+    try:
+        __import__(package.replace("-", "_"))
+    except ModuleNotFoundError:
+        print(f"[SETUP] Instalando {package} automaticamente...")
+        subprocess.check_call(
+            [sys.executable, "-m", "pip", "install", package],
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL
+        )
 
-# 2. Configura o FFmpeg em segundo plano (sem poluir o terminal)
+# 2. Configura o FFmpeg em segundo plano
 try:
+    import static_ffmpeg
     with open(os.devnull, 'w') as fnull:
-        old_stdout = sys.stdout
-        old_stderr = sys.stderr
-        sys.stdout = fnull
-        sys.stderr = fnull
+        old_stdout, old_stderr = sys.stdout, sys.stderr
+        sys.stdout, sys.stderr = fnull, fnull
         try:
             static_ffmpeg.add_paths()
         finally:
-            sys.stdout = old_stdout
-            sys.stderr = old_stderr
+            sys.stdout, sys.stderr = old_stdout, old_stderr
 except Exception:
-    static_ffmpeg.add_paths()
+    pass
 
-from src.cli.interface import CLIInterface
+# 3. Importa e executa a Interface Gráfica
+try:
+    from src.gui.interface import VideoDownloaderGUI
 
-def main():
-    # 3. Limpa a tela do terminal antes de mostrar o programa
-    os.system('cls' if os.name == 'nt' else 'clear')
-    
-    try:
-        app = CLIInterface()
-        app.run()
-    except KeyboardInterrupt:
-        print("\n\nOperação cancelada pelo usuário.")
-        sys.exit(0)
+    def main():
+        app = VideoDownloaderGUI()
+        app.mainloop()
 
-if __name__ == "__main__":
-    main()
+    if __name__ == "__main__":
+        main()
+
+except Exception as e:
+    print(f"\n[ERRO AO ABRIR INTERFACE GRÁFICA]: {e}")
+    input("\nPressione Enter para sair...")
