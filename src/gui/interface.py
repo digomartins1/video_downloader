@@ -8,6 +8,7 @@ from src.services.download_service import DownloadService
 from src.services.update_service import UpdateService
 from src.utils.formatters import format_duration
 
+# Configurações do Tema Visual
 ctk.set_appearance_mode("Dark")
 ctk.set_default_color_theme("blue")
 
@@ -15,8 +16,9 @@ class VideoDownloaderGUI(ctk.CTk):
     def __init__(self):
         super().__init__()
 
+        # Janela Principal
         self.title(f"Python Video Downloader - v{CURRENT_VERSION}")
-        self.geometry("680x600")
+        self.geometry("660x600")
         self.resizable(False, False)
 
         self.current_info = None
@@ -33,7 +35,7 @@ class VideoDownloaderGUI(ctk.CTk):
             text="🎬 Video Downloader", 
             font=ctk.CTkFont(size=24, weight="bold")
         )
-        self.title_label.pack(pady=(15, 2))
+        self.title_label.pack(pady=(15, 5))
 
         self.version_label = ctk.CTkLabel(
             self, 
@@ -43,61 +45,36 @@ class VideoDownloaderGUI(ctk.CTk):
         )
         self.version_label.pack(pady=(0, 10))
 
-        # Campo de Entrada de URL + Botões de Ação Rápida
+        # Campo de Entrada de URL
         self.url_frame = ctk.CTkFrame(self)
-        self.url_frame.pack(fill="x", padx=25, pady=5)
+        self.url_frame.pack(fill="x", padx=30, pady=5)
 
         self.url_entry = ctk.CTkEntry(
             self.url_frame, 
-            placeholder_text="Cole a URL do vídeo aqui...",
+            placeholder_text="Cole a URL do vídeo aqui (YouTube, TikTok, Instagram, etc.)...",
             height=40
         )
-        self.url_entry.pack(side="left", fill="x", expand=True, padx=(10, 5), pady=10)
+        self.url_entry.pack(side="left", fill="x", expand=True, padx=(10, 10), pady=10)
 
-        # ⭐ NOVA FUNÇÃO: Botão Colar
-        self.btn_paste = ctk.CTkButton(
-            self.url_frame, 
-            text="📋 Colar", 
-            width=70, 
-            height=40,
-            fg_color="#3a3a3a",
-            hover_color="#505050",
-            command=self._paste_from_clipboard
-        )
-        self.btn_paste.pack(side="left", padx=5, pady=10)
-
-        # ⭐ NOVA FUNÇÃO: Botão Limpar
-        self.btn_clear = ctk.CTkButton(
-            self.url_frame, 
-            text="🗑️", 
-            width=40, 
-            height=40,
-            fg_color="#8b0000",
-            hover_color="#b22222",
-            command=self._clear_input
-        )
-        self.btn_clear.pack(side="left", padx=5, pady=10)
-
-        # Botão Buscar
         self.btn_search = ctk.CTkButton(
             self.url_frame, 
             text="Buscar", 
-            width=90, 
+            width=100, 
             height=40,
             command=self._on_search_clicked
         )
-        self.btn_search.pack(side="right", padx=(5, 10), pady=10)
+        self.btn_search.pack(side="right", padx=(0, 10), pady=10)
 
         # Card de Informações do Vídeo
         self.info_card = ctk.CTkFrame(self)
-        self.info_card.pack(fill="x", padx=25, pady=10)
+        self.info_card.pack(fill="x", padx=30, pady=10)
 
         self.lbl_video_title = ctk.CTkLabel(
             self.info_card, 
             text="Título: Nenhum vídeo carregado", 
             anchor="w", 
             font=ctk.CTkFont(size=14, weight="bold"),
-            wraplength=610
+            wraplength=580
         )
         self.lbl_video_title.pack(fill="x", padx=15, pady=(10, 2))
 
@@ -119,7 +96,7 @@ class VideoDownloaderGUI(ctk.CTk):
 
         # Seletor de Formato
         self.options_frame = ctk.CTkFrame(self)
-        self.options_frame.pack(fill="x", padx=25, pady=5)
+        self.options_frame.pack(fill="x", padx=30, pady=5)
 
         self.lbl_format = ctk.CTkLabel(self.options_frame, text="Qualidade / Formato:")
         self.lbl_format.pack(side="left", padx=(15, 10), pady=10)
@@ -147,11 +124,11 @@ class VideoDownloaderGUI(ctk.CTk):
             state="disabled",
             command=self._on_download_clicked
         )
-        self.btn_download.pack(fill="x", padx=25, pady=10)
+        self.btn_download.pack(fill="x", padx=30, pady=10)
 
         # Barra de Progresso e Status
         self.progress_bar = ctk.CTkProgressBar(self)
-        self.progress_bar.pack(fill="x", padx=25, pady=(5, 5))
+        self.progress_bar.pack(fill="x", padx=30, pady=(5, 5))
         self.progress_bar.set(0)
 
         self.lbl_status = ctk.CTkLabel(self, text="Aguardando link...", text_color="gray")
@@ -167,21 +144,6 @@ class VideoDownloaderGUI(ctk.CTk):
             command=self._open_download_folder
         )
         self.btn_open_folder.pack(pady=(0, 10))
-
-    # --- Ações dos Novos Botões ---
-    def _paste_from_clipboard(self):
-        """Pega o link da área de transferência e cola no campo."""
-        try:
-            texto = self.clipboard_get().strip()
-            self.url_entry.delete(0, "end")
-            self.url_entry.insert(0, texto)
-        except Exception:
-            pass
-
-    def _clear_input(self):
-        """Limpa o campo de entrada."""
-        self.url_entry.delete(0, "end")
-        self.lbl_status.configure(text="Aguardando link...", text_color="gray")
 
     # --- Lógica de Atualização Automática ---
     def _check_updates_background(self):
@@ -296,6 +258,7 @@ class VideoDownloaderGUI(ctk.CTk):
             messagebox.showerror("Erro", "Ocorreu um erro durante o download.")
 
     def _open_download_folder(self):
+        """Abre a pasta de downloads no Windows Explorer ou gerenciador padrão."""
         if os.name == 'nt':
             os.startfile(DOWNLOAD_DIR)
         else:
