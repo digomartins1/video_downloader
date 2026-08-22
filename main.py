@@ -2,12 +2,11 @@ import os
 import sys
 import subprocess
 
-# 1. Garante que o static-ffmpeg e o customtkinter estejam instalados automaticamente
+# 1. Instalação automática e silenciosa de pacotes ausentes
 for package in ["static-ffmpeg", "customtkinter", "yt-dlp", "rich"]:
     try:
         __import__(package.replace("-", "_"))
     except ModuleNotFoundError:
-        print(f"[SETUP] Instalando {package} automaticamente...")
         subprocess.check_call(
             [sys.executable, "-m", "pip", "install", package],
             stdout=subprocess.DEVNULL,
@@ -27,17 +26,12 @@ try:
 except Exception:
     pass
 
-# 3. Importa e executa a Interface Gráfica
-try:
-    from src.gui.interface import VideoDownloaderGUI
+# 3. Inicializa a Interface Gráfica
+from src.gui.interface import VideoDownloaderGUI
 
-    def main():
-        app = VideoDownloaderGUI()
-        app.mainloop()
+def main():
+    app = VideoDownloaderGUI()
+    app.mainloop()
 
-    if __name__ == "__main__":
-        main()
-
-except Exception as e:
-    print(f"\n[ERRO AO ABRIR INTERFACE GRÁFICA]: {e}")
-    input("\nPressione Enter para sair...")
+if __name__ == "__main__":
+    main()
