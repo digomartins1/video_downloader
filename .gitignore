@@ -1,14 +1,11 @@
-# Ambiente virtual
 .venv/
 venv/
-
-# Cache do Python
 __pycache__/
 *.pyc
-
-# Arquivos baixados e temporários
 downloads/
 temp_repo.zip
-
-# Configurações do PyCharm
+dist/
+build/
+*.spec
 .idea/
+.vscode/
