@@ -8,8 +8,9 @@ def format_bytes(size_bytes: int | float | None) -> str:
         size_bytes /= 1024.0
     return f"{size_bytes:.2f} TB"
 
+
 def format_duration(seconds: int | float | None) -> str:
-    """Converte segundos para HH:MM:SS ou MM:SS."""
+    """Converte segundos para formato HH:MM:SS ou MM:SS."""
     if not seconds:
         return "00:00"
     minutes, sec = divmod(int(seconds), 60)
